@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Train Scheduler</title>
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.6.0/firebase.js"></script>
+</head>
+<body>
+<style type="text/css">
+	body {
+		font-family: 'Roboto Mono', monospace;
+		background-image: url(gplaypattern.png);
+		letter-spacing: 1px;
+	};
+</style>
+	<div class="container">
+		<div class="panel panel-default">
+			<div class="panel-heading" style="background-color: #323e32; color: white;">
+				<h1 style="text-align: center; font-size: 60px;">Train Scheduler</h1>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading" style="background-color: #323e32; color: white;">
+				<h4>Current Train Schedule</h4>
+			</div>
+			<div class="panel-body" style="background-color: #5a5758; color: white;">
+				<table class="table table-hover">
+				    <thead>
+				    	<tr>
+					        <th>Train Name</th>
+					        <th>Destination</th>
+					        <th style="text-align: center;">Frequency (min)</th>
+					        <th style="text-align: center;">Next Arrival</th>
+					        <th style="text-align: center;">Minutes Away</th>
+				    	</tr>
+				    </thead>
+				    <tbody>
+				    	
+				    </tbody>
+				</table>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading" style="background-color: #323e32; color: white;">
+				<h4>Add Train</h4>
+			</div>
+			<div class="panel-body" style="background-color: #5a5758; color: white;">
+				<form>
+					<div class="form-group">
+				      <label for="name">Train Name:</label>
+				      <input type="text" class="form-control" id="name">
+				    </div>
+				    <div class="form-group">
+				      <label for="role">Destination:</label>
+				      <input type="text" class="form-control" id="destination">
+				    </div>
+				    <div class="form-group">
+				      <label for="start">First Train (HH:mm - Military Time):</label>
+				      <input type="text" class="form-control" id="firstTrain">
+				    </div>
+				    <div class="form-group">
+				      <label for="payRate">Frequency (min):</label>
+				      <input type="text" class="form-control" id="frequency">
+				    </div>
+				    <button type="button" class="btn btn-success" id="submitButton">Submit</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	
+	<script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+	<script type="text/javascript">
+  
+		var config = {
+		    apiKey: "AIzaSyAQYNO-12KBiJbqlUWS_TFG_WNyLyo1Awo",
+		    authDomain: "train-scheduler-fed08.firebaseapp.com",
+		    databaseURL: "https://train-scheduler-fed08.firebaseio.com",
+		    projectId: "train-scheduler-fed08",
+		    storageBucket: "",
+		    messagingSenderId: "9912459838"
+		};
+		firebase.initializeApp(config);
+
+		var database = firebase.database();
+		
+		var trainName = "";
+		var destination = "";
+		var firstTrain = 0;
+		var frequency = 0;
+		var nextArrive = 0;
+		var minutesAway = 0;
+
+		$("#submitButton").on("click", function(){
+
+			trainName = $("#name").val();
+			destination = $("#destination").val();
+			firstTrain = $("#firstTrain").val();
+			frequency = $("#frequency").val();
+
+			database.ref().push({
+				trainName: trainName,
+				destination: destination,
+				firstTrain: firstTrain,
+				frequency: frequency
+			});
+		});
+
+		database.ref().on("child_added", function(snapshot) {
+
+			trainName = snapshot.val().trainName;
+			destination = snapshot.val().destination;
+			frequency = snapshot.val().frequency;
+			var firstTrain = snapshot.val().firstTrain;
+
+			var firstTrainConverted = moment(firstTrain, "hh:mm").subtract(1, "years");
+
+		    var currentTime = moment();
+
+		    var diffTime = moment().diff(moment(firstTrainConverted), "minutes");
+
+		    var tRemainder = diffTime % frequency;
+
+		    var tMinutesTillTrain = frequency - tRemainder;
+		    var tillTrain = moment(tMinutesTillTrain).format("HH:mm");
+
+		    var nextTrain = moment().add(tMinutesTillTrain, "minutes").format("HH:mm");
+
+			var table = $("tbody");
+				var newRow = $("<tr>");
+					table.append(newRow);
+					var nameTable = $("<td>").text(trainName);
+						newRow.append(nameTable);
+					var destTable = $("<td>").text(destination);
+						newRow.append(destTable);
+					var frequencyTable = $("<td>").text(frequency);
+						frequencyTable.attr("style", "text-align: center;")
+						newRow.append(frequencyTable);
+					var nextTable = $("<td>").text(nextTrain);
+						nextTable.attr("style", "text-align: center;");
+						newRow.append(nextTable);	
+					var awayTable = $("<td>").text(tMinutesTillTrain);
+						awayTable.attr("style", "text-align: center;");
+						newRow.append(awayTable);
+
+		});
+
+	</script>
+</body>
+</html>
